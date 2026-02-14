@@ -1,21 +1,25 @@
-// 電子書主程式
+// 電子書主程式 v2 - 支援多頁 PDF
 class FamilyTreeEbook {
   constructor() {
     this.currentPage = 0;
-    this.totalPages = 16; // 封面 + 15 個 PDF
-    this.pages = [];
-    this.pdfFiles = [];
+    this.totalPages = 0;
+    this.pageElements = [];
     this.isLoading = true;
     this.musicPlaying = false;
+
+    // PDF 檔案配置：[檔名, 頁數]
+    this.pdfConfig = [
+      ['00', 1], ['01', 1], ['02', 2], ['03', 2], ['04', 1],
+      ['05', 1], ['06', 1], ['07', 1], ['08', 2], ['09', 2],
+      ['10', 1], ['11', 2], ['12', 1], ['13', 1], ['14', 1]
+    ];
 
     this.init();
   }
 
   async init() {
-    // 產生 PDF 檔案路徑
-    for (let i = 0; i <= 14; i++) {
-      this.pdfFiles.push(`pdf/${i.toString().padStart(2, '0')}.pdf`);
-    }
+    // 計算總頁數（封面 + 所有 PDF 頁面）
+    this.totalPages = 1 + this.pdfConfig.reduce((sum, [_, pages]) => sum + pages, 0);
 
     // 初始化頁面
     await this.loadAllPDFs();
@@ -29,65 +33,86 @@ class FamilyTreeEbook {
     setTimeout(() => {
       document.getElementById('loading-screen').classList.add('hidden');
       this.isLoading = false;
-    }, 1000);
+    }, 1500);
 
-    console.log('許比派下親屬譜電子書 v1.0.0');
+    console.log(`許比派下親屬譜電子書 v2.0.0 - 共 ${this.totalPages} 頁`);
   }
 
   async loadAllPDFs() {
     const container = document.getElementById('pages-container');
     const thumbnailsPanel = document.getElementById('thumbnails-panel');
 
-    for (let i = 0; i < this.pdfFiles.length; i++) {
-      const pageDiv = document.createElement('div');
-      pageDiv.className = 'page pdf-page hidden';
-      pageDiv.dataset.page = i + 1;
+    let pageIndex = 1; // 從 1 開始（0 是封面）
 
-      // 頁碼
-      const pageNum = document.createElement('div');
-      pageNum.className = 'page-number';
-      pageNum.textContent = `第 ${i + 1} 頁`;
-      pageDiv.appendChild(pageNum);
+    for (const [pdfName, numPages] of this.pdfConfig) {
+      const pdfUrl = `pdf/${pdfName}.pdf`;
 
-      container.appendChild(pageDiv);
-      this.pages.push(pageDiv);
-
-      // 新增縮圖導航項目
-      const thumbnail = document.createElement('div');
-      thumbnail.className = 'thumbnail';
-      thumbnail.dataset.page = i + 1;
-      thumbnail.textContent = `第 ${i + 1} 頁`;
-      thumbnail.addEventListener('click', () => this.goToPage(i + 1));
-      thumbnailsPanel.appendChild(thumbnail);
-
-      // 載入 PDF
       try {
-        await this.loadPDF(this.pdfFiles[i], pageDiv);
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const pdf = await loadingTask.promise;
+
+        // 載入該 PDF 的所有頁面
+        for (let p = 1; p <= numPages; p++) {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'page pdf-page hidden';
+          pageDiv.dataset.page = pageIndex;
+
+          // 頁碼
+          const pageNum = document.createElement('div');
+          pageNum.className = 'page-number';
+          pageNum.textContent = `第 ${pageIndex} 頁`;
+          pageDiv.appendChild(pageNum);
+
+          container.appendChild(pageDiv);
+          this.pageElements.push(pageDiv);
+
+          // 新增縮圖導航項目
+          const thumbnail = document.createElement('div');
+          thumbnail.className = 'thumbnail';
+          thumbnail.dataset.page = pageIndex;
+          thumbnail.textContent = `第 ${pageIndex} 頁`;
+          const idx = pageIndex;
+          thumbnail.addEventListener('click', () => this.goToPage(idx));
+          thumbnailsPanel.appendChild(thumbnail);
+
+          // 渲染 PDF 頁面
+          await this.renderPDFPage(pdf, p, pageDiv);
+
+          pageIndex++;
+        }
       } catch (error) {
-        console.error(`Error loading PDF ${i}:`, error);
-        pageDiv.innerHTML = `<p style="color: #8B4513; text-align: center;">無法載入第 ${i + 1} 頁</p>`;
+        console.error(`Error loading PDF ${pdfName}:`, error);
+        // 建立錯誤頁面
+        for (let p = 1; p <= numPages; p++) {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'page pdf-page hidden';
+          pageDiv.innerHTML = `<p style="color: #8B4513; text-align: center; padding: 20px;">無法載入 ${pdfName}.pdf 第 ${p} 頁</p>`;
+          container.appendChild(pageDiv);
+          this.pageElements.push(pageDiv);
+          pageIndex++;
+        }
       }
     }
+
+    // 更新總頁數顯示
+    document.getElementById('total-pages').textContent = this.totalPages - 1;
 
     // 設定封面為活動頁
     document.querySelector('.cover-page').classList.add('active');
   }
 
-  async loadPDF(url, container) {
+  async renderPDFPage(pdf, pageNum, container) {
     try {
-      const loadingTask = pdfjsLib.getDocument(url);
-      const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1);
-
+      const page = await pdf.getPage(pageNum);
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
 
       // 取得容器實際尺寸
       const containerWidth = Math.min(window.innerWidth * 0.92, 1350);
-      const containerHeight = Math.min(window.innerHeight * 0.75, 720);
+      const containerHeight = Math.min(window.innerHeight * 0.72, 700);
       const viewport = page.getViewport({ scale: 1 });
 
-      // 計算適合容器的縮放比例，保持比例填滿
+      // 計算適合容器的縮放比例
       const scaleX = containerWidth / viewport.width;
       const scaleY = containerHeight / viewport.height;
       const scale = Math.min(scaleX, scaleY);
@@ -101,13 +126,14 @@ class FamilyTreeEbook {
         viewport: scaledViewport
       }).promise;
 
-      // 保留頁碼，只插入 canvas
-      const pageNum = container.querySelector('.page-number');
+      // 保留頁碼，插入 canvas
+      const pageNumEl = container.querySelector('.page-number');
       container.innerHTML = '';
       container.appendChild(canvas);
-      if (pageNum) container.appendChild(pageNum);
+      if (pageNumEl) container.appendChild(pageNumEl);
 
     } catch (error) {
+      console.error('Render error:', error);
       throw error;
     }
   }
@@ -128,7 +154,6 @@ class FamilyTreeEbook {
     const iconOn = document.getElementById('music-on');
     const iconOff = document.getElementById('music-off');
 
-    // 設定音量
     music.volume = 0.3;
 
     toggle.addEventListener('click', () => {
@@ -194,18 +219,13 @@ class FamilyTreeEbook {
 
   setupTouchNav() {
     let touchStartX = 0;
-    let touchEndX = 0;
 
     document.addEventListener('touchstart', (e) => {
       touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      this.handleSwipe();
-    }, { passive: true });
-
-    const handleSwipe = () => {
+      const touchEndX = e.changedTouches[0].screenX;
       const diff = touchStartX - touchEndX;
       if (Math.abs(diff) > 50) {
         if (diff > 0) {
@@ -214,45 +234,24 @@ class FamilyTreeEbook {
           this.prevPage();
         }
       }
-    };
-    this.handleSwipe = handleSwipe;
+    }, { passive: true });
   }
 
   goToPage(pageIndex) {
     if (pageIndex < 0 || pageIndex >= this.totalPages || pageIndex === this.currentPage) return;
 
-    const direction = pageIndex > this.currentPage ? 'next' : 'prev';
     const currentPageEl = this.getPageElement(this.currentPage);
     const targetPageEl = this.getPageElement(pageIndex);
 
     // 移除所有頁面的活動狀態
     document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active', 'flip-in', 'flip-out');
+      p.classList.remove('active', 'flip-in', 'flip-out', 'prev');
       p.classList.add('hidden');
     });
 
-    // 動畫效果
-    if (direction === 'next') {
-      currentPageEl.classList.remove('hidden');
-      currentPageEl.classList.add('flip-out');
-      setTimeout(() => {
-        currentPageEl.classList.add('hidden');
-        currentPageEl.classList.remove('flip-out');
-      }, 600);
-    } else {
-      currentPageEl.classList.remove('hidden');
-      currentPageEl.classList.add('prev');
-      setTimeout(() => {
-        currentPageEl.classList.add('hidden');
-        currentPageEl.classList.remove('prev');
-      }, 600);
-    }
-
+    // 顯示目標頁面
     targetPageEl.classList.remove('hidden');
-    targetPageEl.classList.add('flip-in', 'active');
-    setTimeout(() => {
-      targetPageEl.classList.remove('flip-in');
-    }, 600);
+    targetPageEl.classList.add('active');
 
     this.currentPage = pageIndex;
     this.updateNavigation();
@@ -263,7 +262,7 @@ class FamilyTreeEbook {
     if (index === 0) {
       return document.querySelector('.cover-page');
     }
-    return this.pages[index - 1];
+    return this.pageElements[index - 1];
   }
 
   prevPage() {
