@@ -1,0 +1,16 @@
+{
+  "name": "family-tree-ebook",
+  "version": "1.0.0",
+  "description": "彰化縣福興鄉坎仔腳 許比派下親屬譜電子書",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["family-tree", "ebook", "genealogy"],
+  "author": "陳輝棨 & 許銘松",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

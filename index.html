@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>彰化縣福興鄉坎仔腳 許比派下親屬譜</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 載入畫面 -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <div class="loading-icon"></div>
+      <p>族譜載入中...</p>
+    </div>
+  </div>
+
+  <!-- 音樂控制 -->
+  <div id="music-control">
+    <button id="music-toggle" title="播放/暫停音樂">
+      <svg id="music-on" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+      <svg id="music-off" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+        <path d="M4.27 3L3 4.27l9 9v.28c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-1.73l5.73 5.73L21 19.73 4.27 3zM14 7h4V3h-6v5.18l2 2V7z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 主要電子書容器 -->
+  <div id="ebook-container">
+    <!-- 封面 -->
+    <div class="page cover-page" data-page="0">
+      <div class="cover-background">
+        <div class="cover-pattern"></div>
+        <div class="cover-border">
+          <div class="cover-content">
+            <div class="cover-decoration top-left"></div>
+            <div class="cover-decoration top-right"></div>
+            <div class="cover-decoration bottom-left"></div>
+            <div class="cover-decoration bottom-right"></div>
+
+            <div class="cover-title-wrapper">
+              <h1 class="cover-title">
+                <span class="title-line">彰化縣福興鄉坎仔腳</span>
+                <span class="title-main">許比派下親屬譜</span>
+              </h1>
+            </div>
+
+            <div class="cover-subtitle">
+              <span class="subtitle-decoration">❧</span>
+              <span>傳承 · 記憶 · 永恆</span>
+              <span class="subtitle-decoration">❧</span>
+            </div>
+
+            <div class="cover-credits">
+              <p>陳輝棨 & 許銘松</p>
+              <p class="credits-sub">暨各房親人合力協助</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF 頁面將動態載入 -->
+    <div id="pages-container"></div>
+  </div>
+
+  <!-- 導航控制 -->
+  <div id="navigation">
+    <button id="prev-btn" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+      </svg>
+      <span>上一頁</span>
+    </button>
+    <div id="page-indicator">
+      <span id="current-page">封面</span>
+      <span class="separator">/</span>
+      <span id="total-pages">15</span>
+    </div>
+    <button id="next-btn">
+      <span>下一頁</span>
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 頁面縮圖導航 -->
+  <div id="thumbnail-nav">
+    <button id="toggle-thumbnails" title="頁面導覽">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+      </svg>
+    </button>
+    <div id="thumbnails-panel">
+      <div class="thumbnail active" data-page="0">
+        <span>封面</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 背景音樂 -->
+  <audio id="bg-music" loop>
+    <source src="https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
